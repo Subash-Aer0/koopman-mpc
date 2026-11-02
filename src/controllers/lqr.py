@@ -46,6 +46,26 @@ def _validate_weight(name: str, M, size: int, positive_definite: bool) -> np.nda
     return M
 
 
+def saturate(u: np.ndarray, max_body_rate: float,
+             thrust_limits: tuple[float, float]) -> np.ndarray:
+    """Scale ω onto the ‖ω‖ <= max_body_rate ball (keeps the rotation axis) and clip c.
+
+    Args:
+        u: Command [ω (rad/s, body FRD), c (m/s²)], shape (4,).
+        max_body_rate: Bound on ‖ω‖, rad/s.
+        thrust_limits: (c_min, c_max), m/s².
+
+    Returns:
+        Saturated copy of u, shape (4,).
+    """
+    u = np.array(u, dtype=float)
+    rate_norm = np.linalg.norm(u[RATE])
+    if rate_norm > max_body_rate:
+        u[RATE] *= max_body_rate / rate_norm
+    u[THRUST] = np.clip(u[THRUST], *thrust_limits)
+    return u
+
+
 def lqr_gain(x, u, Q: np.ndarray, R: np.ndarray, dt: float) -> np.ndarray:
     """Discrete infinite-horizon LQR gain linearized at (x, u), Eqs. (14)-(15) of [16].
 
@@ -140,13 +160,12 @@ class LQRTracker:
             x_ref[QUAT] = -x_ref[QUAT]
 
         u = u_ref + self.K @ (x - x_ref)
-        return self._saturate(u)
+        return self.saturate(u)
 
-    def _saturate(self, u: np.ndarray) -> np.ndarray:
-        """Scale ω onto the ‖ω‖ ball (keeps the rotation axis) and clip c."""
-        u = u.copy()
-        rate_norm = np.linalg.norm(u[RATE])
-        if rate_norm > self.max_body_rate:
-            u[RATE] *= self.max_body_rate / rate_norm
-        u[THRUST] = np.clip(u[THRUST], *self.thrust_limits)
-        return u
+    def saturate(self, u) -> np.ndarray:
+        """Apply this tracker's input limits to any command u, shape (4,).
+
+        Used on u_h + u_d so an augmenting term cannot exceed the limits.
+        """
+        u = as_finite_vector("u", u, INPUT_DIM)
+        return saturate(u, self.max_body_rate, self.thrust_limits)
