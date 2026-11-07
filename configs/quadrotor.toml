@@ -1,0 +1,24 @@
+# Rigid-body and drag parameters for the quadrotor model (src/dynamics).
+#
+# PLACEHOLDER VALUES: the paper does not report vehicle parameters. These are
+# generic F450-class numbers chosen only to give a plausible ~1 kg vehicle.
+# Replace them with identified values before drawing quantitative conclusions.
+#
+# Frames: body is FRD (x forward, y right, z down), world is NED.
+
+[vehicle]
+mass = 1.0  # kg
+# Moment of inertia about the centre of mass, body FRD frame, kg·m².
+inertia = [
+    [0.0082, 0.0, 0.0],
+    [0.0, 0.0082, 0.0],
+    [0.0, 0.0, 0.0149],
+]
+
+[drag]
+# Diagonal of D in f_D = R D v_rb ||v_rb|| (Sec. II-A), body FRD axes, N·s²/m².
+# At 5 m/s air-relative speed along x this gives 1.25 N, about 0.13 g.
+coefficients = [0.05, 0.05, 0.10]
+
+[environment]
+gravity = 9.81  # m/s², acts along +z in NED

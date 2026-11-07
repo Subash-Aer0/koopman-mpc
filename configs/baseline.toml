@@ -1,0 +1,25 @@
+# Baseline controller: state-dependent LQR [16] + body-rate loop, and loop timing.
+#
+# Frames: world NED, body FRD. LQR state order [p (3), q (4), v (3)],
+# input order [ω (3), c]; see src/controllers/sdlqr_model.py.
+# Q, R and limits are the values of [16], Sec. III-B.
+
+[lqr]
+Q_diag = [100.0, 100.0, 100.0, 1.0, 1.0, 1.0, 1.0, 10.0, 10.0, 10.0]
+R_diag = [1.0, 5.0, 5.0, 0.1]
+max_body_rate = 2.0          # rad/s, bound on ‖ω‖
+thrust_limits = [2.0, 18.0]  # m/s², mass-normalized collective thrust c
+
+[rate_controller]
+# K_ω diagonal, body FRD axes, 1/s; 1/k is each axis' rate time constant.
+# Chosen ≥ 5x faster than the LQR closed loop (time-scale separation, [16] Sec. II-A).
+gains = [20.0, 20.0, 10.0]
+
+[timing]
+# Periods in s; each must be an integer multiple of dt_sim, and dt_gain and
+# dt_augment integer multiples of dt_control. The LQR is discretized with dt_control.
+dt_sim = 0.001      # RK4 integration and body-rate loop, 1 kHz
+dt_control = 0.01   # LQR command, 100 Hz ([16])
+dt_gain = 0.1       # LQR re-linearization, 10 Hz ([16])
+dt_augment = 0.1    # u_d update (perturbation / MPC), 10 Hz = Koopman sample time
+dt_log = 0.1        # logged samples, 10 Hz
