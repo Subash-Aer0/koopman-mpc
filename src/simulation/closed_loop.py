@@ -26,6 +26,7 @@ from controllers.low_level import BodyRateController
 from controllers.lqr import LQRTracker
 from dynamics import dynamics as rigid_body
 from dynamics._validation import as_finite_vector
+from dynamics.actuator import RotorActuator
 from dynamics.params import QuadParams
 
 _STEP_RATIO_TOL = 1e-9
@@ -139,6 +140,7 @@ def simulate(
     rate_controller: BodyRateController,
     timing: Timing = Timing(),
     augmentation: Augmentation | None = None,
+    actuator: RotorActuator | None = None,
 ) -> SimulationLog:
     """Simulate the closed loop from x0 for `duration` seconds.
 
@@ -155,6 +157,8 @@ def simulate(
         rate_controller: Low-level body-rate controller.
         timing: Loop periods.
         augmentation: Optional u_d(t, x, x_ref), held over dt_augment.
+        actuator: The vehicle's rotors, commanded -> applied wrench (truth);
+            None applies the command exactly (ideal rotors).
 
     Returns:
         SimulationLog sampled every timing.dt_log, starting at t = 0.
@@ -212,6 +216,8 @@ def simulate(
             log["v_w"][i] = v_w
 
         f_t, tau_t = rate_controller(x, u_cmd)
+        if actuator is not None:
+            f_t, tau_t = actuator(x, f_t, tau_t, v_w)
         x = rigid_body.rk4_step(x, f_t, tau_t, v_w, params, timing.dt_sim)
 
     return SimulationLog(**log, timing=timing)

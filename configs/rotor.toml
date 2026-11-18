@@ -1,0 +1,36 @@
+# Rotor, mixer and blade-element parameters (src/dynamics/rotor.py).
+#
+# PLACEHOLDER VALUES: a generic 10x4.5 two-blade propeller on a ~1 kg X-frame
+# quadrotor (hover ≈ 5500 rpm). Replace with measured values before drawing
+# quantitative conclusions.
+#
+# Frames: body FRD (x forward, y right, z down). Rotor i sits at
+# r_i = arm_length · [cos β_i, sin β_i, 0], β_i = arm_angles_deg[i], and its
+# thrust acts along −z_body.
+
+[quadratic]
+# Nominal rotor model T = k_T Ω², Q = k_Q Ω² (Ω in rad/s). This is what the
+# controller believes; the mixer inverts it.
+thrust_coefficient = 7.39e-6     # k_T, N·s²; hover (2.45 N per rotor) at ≈ 576 rad/s
+torque_coefficient = 1.18e-7     # k_Q, N·m·s²; k_Q / k_T ≈ 0.016 m
+
+[geometry]
+arm_length = 0.225               # m, centre of mass to rotor axis
+arm_angles_deg = [45.0, -135.0, -45.0, 135.0]   # front-right, rear-left, front-left, rear-right
+# Sign of each rotor's reaction torque about +z_body: +1 if the rotor spins
+# clockwise seen from above (its drag torque on the body points along +z_body,
+# i.e. down in FRD), −1 otherwise. Diagonal pairs spin the same way.
+yaw_torque_signs = [1.0, 1.0, -1.0, -1.0]
+
+[blade]
+# Blade-element description used by BEMT. The root collective pitch θ₀ and the
+# profile drag coefficient C_d0 are NOT set here: they are calibrated so that,
+# in still-air hover, BEMT reproduces k_T and k_Q exactly (rotor.py).
+radius = 0.127                   # R, m (10 in diameter)
+chord = 0.020                    # c, m, constant along the span
+blades = 2                       # N_b
+twist = -0.15                    # θ_tw, rad, linear twist root -> tip (washout)
+lift_slope = 5.7                 # a, 1/rad, 2-D lift-curve slope
+
+[environment]
+air_density = 1.225              # ρ, kg/m³, sea level

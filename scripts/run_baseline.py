@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> Path:
     logger.info("run %s: seed %d, %.1f s simulated", run_dir.name, exp.seed, exp.duration)
 
     log = simulate(exp.x0, exp.duration, exp.reference, exp.wind, exp.params,
-                   exp.lqr, exp.rate_controller, exp.timing)
+                   exp.lqr, exp.rate_controller, exp.timing, actuator=exp.actuator)
     save_log(run_dir, log)
 
     final_error = np.linalg.norm(log.x[-1, POS] - log.x_ref[-1, REF_POS])
