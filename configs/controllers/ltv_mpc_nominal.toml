@@ -1,0 +1,13 @@
+# Nominal LTV MPC: same as ltv_mpc.toml, but the controller's model has no drag,
+# so it knows nothing about how wind acts on the vehicle (rigid body + gravity +
+# thrust only). This is the controller available before any learning: it flies
+# the Koopman identification data and is the lower bound of the comparison.
+#
+# Weights, limits, horizon, sample time, mean wind and yaw come from the same
+# base config as the oracle, so nominal and oracle differ only in the model.
+
+[ltv_mpc]
+base_config = "hover_mpc.toml"   # relative to this file
+terminal = "cost_only"
+riccati_lead = 5.0               # s, as ltv_mpc.toml
+model_drag_scale = 0.0           # no drag in the controller's model

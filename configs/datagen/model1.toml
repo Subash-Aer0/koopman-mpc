@@ -1,0 +1,57 @@
+# Identification dataset for Koopman Model 1, Eq. (5) (Sec. IV-A of the CCTA paper).
+#
+# 2 reference trajectories x 4 repeats for training, 1 more episode per
+# reference for validation, each with its own wind and perturbation draws.
+# Paths are relative to this file. Frames: world NED (z down), body FRD.
+
+[datagen]
+name = "datagen_model1"
+seed = 0
+duration = 14.0                          # s per episode (Sec. IV-A)
+vehicle_config = "../quadrotor.toml"
+controller_config = "../baseline.toml"
+
+[perturbation]
+# u_d ~ U(-a, a) per channel, redrawn every dt_augment (10 Hz) and added to u_h.
+# The paper gives no scale; chosen as ~15% of max_body_rate and ~10% of hover thrust,
+# small enough that u_h + u_d stays inside the LQR limits almost always.
+bounds = [0.3, 0.3, 0.3, 1.0]            # [ω_x, ω_y, ω_z (rad/s), c (m/s²)]
+
+[wind]
+# Gaussian stand-in for the LES field of [26]: mean and covariance from Sec. IV-A,
+# redrawn every hold_period. hold_period = dt_log, so each logged v_w is the wind
+# over the whole sample interval. The paper does not state the frame of v̄_w;
+# it is used here as NED.
+type = "gaussian"
+mean = [2.7032, 1.7566, 0.0124]          # m/s
+cov = [                                  # (m/s)²
+    [0.5434, 0.0, 0.0],
+    [0.0, 0.4197, 0.0],
+    [0.0, 0.0, 0.0064],
+]
+hold_period = 0.1                        # s
+
+# The paper does not specify its two references. Both are non-planar, take two
+# laps in 14 s and are flown nose-north. Every episode starts on its reference.
+[references.figure8]
+type = "figure8"
+center = [0.0, 0.0, -2.0]                # m, NED
+amplitudes = [3.0, 1.5, 1.0]             # [A, B, C], m
+period = 7.0                             # s per 8
+yaw_deg = 0.0
+
+[references.circle]
+type = "circle"
+center = [0.0, 0.0, -2.0]                # m, NED
+radius = 2.0                             # m
+vertical_amplitude = 0.5                 # m
+period = 7.0                             # s per lap; peak horizontal speed ≈ 1.8 m/s
+yaw_deg = 0.0
+
+[splits.train]
+references = ["figure8", "circle"]
+repeats = 4
+
+[splits.validation]
+references = ["figure8", "circle"]
+repeats = 1

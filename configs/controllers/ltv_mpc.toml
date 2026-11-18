@@ -1,0 +1,19 @@
+# Error-state LTV MPC: the hover MPC re-linearized along the reference.
+# Model: controllers/trajectory_model.py; controller: controllers/ltv_mpc.py.
+#
+# Everything shared with the hover MPC (sample time, horizon, Q, R, limits, mean
+# wind, yaw) is read from the base config, so the two baselines cannot drift
+# apart. Only what is specific to LTV is set here.
+
+[ltv_mpc]
+base_config = "hover_mpc.toml"   # relative to this file
+terminal = "cost_only"           # "cost_only" (P_{k+N} from the TV Riccati) or "equality" (e_N = 0)
+# Controller's drag = true drag × this. 1.0 is the oracle: the simulator's own
+# drag model, available only in simulation (upper bound of the comparison).
+model_drag_scale = 1.0
+
+# Tail of the model grid used only to converge the backward Riccati recursion.
+# Measured on the 5 s, r = 2 m circle in mean wind, starting from the DARE of the
+# last sample: relative error of P against the periodic solution is 1e-2 at 0 s,
+# 1.5e-5 at 5 s and 5e-8 at 10 s.
+riccati_lead = 5.0               # s

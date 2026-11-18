@@ -1,0 +1,17 @@
+# Paired Monte Carlo: LQR vs LQR + K-MPC on the training references in
+# Gaussian wind (Sec. IV-C, Tables II-III). Paths are relative to this file.
+
+[evaluate]
+name = "kmpc_vs_lqr"
+# Root of the wind seeds. Run seeds are SeedSequence(seed).generate_state(n_runs);
+# datagen spawns children of SeedSequence([datagen] seed), so evaluation winds
+# do not coincide with the training winds.
+seed = 2026
+# The paper uses 5 runs. With 5 pairs a paired test has little power (a
+# Wilcoxon test cannot reach p < 0.05 at all), so this uses 20.
+n_runs = 20
+experiments = [
+    "../experiments/figure8_gaussian.toml",
+    "../experiments/circle_gaussian.toml",
+]
+kmpc_config = "../controllers/kmpc.toml"

@@ -1,0 +1,11 @@
+# Grey-box fit of the body drag coefficients (identification/greybox_drag.py).
+# The dataset is given on the command line (a collect_outer_loop_data run), so
+# the grey-box model and the Koopman model are fitted to the same flights.
+
+[greybox]
+name = "greybox_drag"
+seed = 0                         # least squares is deterministic; kept for the run record
+mpc_config = "../controllers/ltv_mpc_nominal.toml"   # sample time of the dataset
+# Which drag coefficients are free: "anisotropic" [d_x, d_y, d_z],
+# "horizontal_equal" [d_xy, d_z] or "isotropic" [d].
+form = "anisotropic"

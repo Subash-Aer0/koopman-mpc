@@ -1,0 +1,27 @@
+# Error-state linear MPC on the hover linearization (baseline; replaces the LQR).
+# Model: controllers/hover_model.py, trimmed at hover in the mean wind below.
+# Units: e = [p (m), v (m/s), roll/pitch/yaw (rad)], world NED, ZYX Euler;
+# u = [ω_x, ω_y, ω_z (body FRD, rad/s), c (mass-normalized thrust, m/s²)].
+
+[hover_mpc]
+# 10 Hz, the Koopman model's sample time, so the Koopman MPC compares like for like.
+sample_time = 0.1      # s; must be an integer multiple of the 1 ms simulation step
+horizon = 20           # N, 2 s of prediction
+terminal = "polytope"  # "polytope" (cost P + O∞), "equality" (e_N = 0) or "cost_only" (P only)
+
+# Same weights as configs/controllers/kmpc.toml (the LQR's, mapped to the error state).
+Q_diag = [100.0, 100.0, 100.0, 10.0, 10.0, 10.0, 1.0, 1.0, 1.0]
+R_diag = [1.0, 5.0, 5.0, 0.1]
+
+# The LQR's limits (configs/baseline.toml). ‖ω‖ ≤ max_body_rate becomes the box
+# |ω_i| ≤ max_body_rate/√3 in the QP (experiment/hover_mpc_config.py).
+max_body_rate = 2.0              # rad/s
+thrust_limits = [2.0, 18.0]      # m/s²
+max_tilt = 0.5                   # rad, bound on |roll| and |pitch| along the horizon
+
+# No wind knowledge: trim at level hover, drag absent from the model (same
+# information as the LQR baseline). Otherwise identical to hover_mpc.toml.
+# Mean wind the trim is computed for, world NED, m/s:
+# Gaussian wind in the experiments (Sec. IV-A of the CCTA paper).
+wind_mean = [0.0, 0.0, 0.0]
+yaw_deg = 0.0                    # trim heading; must equal the reference yaw

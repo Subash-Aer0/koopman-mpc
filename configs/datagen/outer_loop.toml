@@ -1,0 +1,57 @@
+# Identification data for the outer-loop Koopman model (total command -> vehicle state).
+# Flown by the NOMINAL LTV MPC + uniform dither, in the Gaussian wind of the CCTA
+# paper. The nominal controller does not model drag, so it does not know how the
+# wind acts: it is the controller available before learning. Paths are relative
+# to this file. Frames: world NED, body FRD.
+#
+# Train and validation are random sum-of-sines references (different draws)
+# plus hover. Circles and figure-8s are kept out of both, so the MPC comparison
+# on them tests generalization to unseen trajectory families. The random
+# references span the comparison's range (circle/figure-8 peak tilt 0.08-0.31
+# rad, speed up to 2.5 m/s, vertical motion up to 1 m) and go beyond it.
+
+[datagen]
+name = "outer_loop_data"
+seed = 0
+duration = 14.0                               # s per episode
+vehicle_config = "../quadrotor.toml"
+controller_config = "../baseline.toml"        # rate-loop gains and dt_sim
+mpc_config = "../controllers/ltv_mpc_nominal.toml"   # LTV MPC that flies the episodes
+
+[dither]
+# u_d ~ U(-a, a) per channel, redrawn at every 10 Hz command. Same scale as the
+# paper's perturbations (configs/datagen/model1.toml): about 15% of the rate
+# limit and 10% of hover thrust.
+bounds = [0.3, 0.3, 0.3, 1.0]                 # [ω_x, ω_y, ω_z (rad/s), c (m/s²)]
+
+[wind]
+type = "gaussian"
+mean = [2.7032, 1.7566, 0.0124]               # m/s, Sec. IV-A
+cov = [
+    [0.5434, 0.0, 0.0],
+    [0.0, 0.4197, 0.0],
+    [0.0, 0.0, 0.0064],
+]
+hold_period = 0.1                             # s
+
+[common]
+center = [0.0, 0.0, -2.0]                     # m, NED; reference mean and hover setpoint
+yaw_deg = 0.0
+hover_offset = [1.0, 1.0, 0.5]                # m, hover episodes start at U(-a, a) from the setpoint
+
+[random_reference]
+# datagen.trajectories.sample_sum_of_sines; per episode the tilt and vertical
+# bounds are drawn uniformly from the ranges below.
+components = 3                                # sinusoids per axis
+frequency_range = [0.07, 0.25]                # Hz; circles of period 14 s to 4 s
+peak_tilt_range = [0.05, 0.40]                # rad; the MPC's max_tilt is 0.5
+max_speed = 3.5                               # m/s, horizontal
+vertical_amplitude_range = [0.0, 1.0]         # m
+
+[splits.train]
+random_episodes = 30
+hover_episodes = 6
+
+[splits.validation]
+random_episodes = 8
+hover_episodes = 2

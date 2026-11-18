@@ -1,0 +1,10 @@
+# l1-EDMD fit of Koopman Model 1, Eq. (5), values from Sec. IV-B of the CCTA paper.
+# The dataset is given on the command line (a datagen run directory), not here,
+# so one config can be fitted to several datasets.
+
+[identify]
+name = "edmd_model1"
+seed = 0               # EDMD is deterministic; kept so every run record has a seed
+degree = 2             # p, monomial degree; N = 55 for the 9-dim error state
+l1_lambda = 20.0       # λ in Eq. (8)
+horizon = 5            # H, validation prediction steps; MPC horizon n_p (Sec. IV-C)

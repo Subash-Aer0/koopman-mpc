@@ -1,0 +1,28 @@
+# Ablation of outer_loop.toml: attitude enters through raw-angle monomials
+# instead of sin / cos − 1 (the dictionary used before trig features).
+# EDMD fit of the outer-loop Koopman model (total command -> vehicle state).
+# The dataset is given on the command line (a collect_outer_loop_data run).
+# Coordinates: deviations from the hover trim of the model mpc_config believes
+# in, scaled by their training std (not shifted). With the nominal LTV config
+# that trim is level hover at c = g: no oracle knowledge of the drag enters.
+
+[identify]
+name = "outer_loop_koopman_monomial"
+seed = 0                         # EDMD is deterministic; kept for the run record
+mpc_config = "../controllers/ltv_mpc_nominal.toml"   # believed model (trim), base config (sample time, mean wind)
+degree = 2                       # monomial degree of the extra features
+# Monomials only in velocity (drag) and attitude (thrust direction); position
+# stays linear (translation invariance), body rates stay linear.
+nonlinear_states = ["v_x", "v_y", "v_z", "roll", "pitch", "yaw"]
+include_body_rates = true        # lets the model learn the rate-loop lag
+# Position may only feed itself (p⁺ = p + ...): the dynamics do not depend on
+# where the vehicle is. Without this, flights all at one altitude let the fit
+# tie p_z to the constant feature, and the model predicts a phantom force at
+# other altitudes (run 20261116T185727Z: 0.4 m/s² per metre of altitude).
+translation_invariant = true
+# λ of the l1 penalty, Eq. (8); each is fitted and the one with the lowest
+# validation error at `horizon` steps is kept (all are reported). The invariant
+# fit is least squares only; the Lasso solver did not converge for λ = 1, 10 on
+# this regressor anyway (run 20261116T185727Z).
+l1_lambdas = [0.0]
+horizon = 20                     # steps; the MPC horizon N

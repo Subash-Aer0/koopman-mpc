@@ -1,0 +1,30 @@
+# Figure-8 at 14 s per 8 (the 7 s one needs more tilt than the MPC's max_tilt), in the
+# Gaussian wind of the CCTA paper. A held-out test family for the outer-loop Koopman model.
+# Paths are relative to this file. Frames: world NED (z down), body FRD.
+
+[experiment]
+name = "figure8_14s_gaussian"
+seed = 0
+duration = 20.0                           # s
+vehicle_config = "../quadrotor.toml"
+controller_config = "../baseline.toml"
+
+[initial_state]
+start_on_reference = true
+
+[reference]
+type = "figure8"
+center = [0.0, 0.0, -2.0]                # m, NED
+amplitudes = [3.0, 1.5, 1.0]             # [A, B, C], m
+period = 14.0                            # s per 8
+yaw_deg = 0.0
+
+[wind]
+type = "gaussian"
+mean = [2.7032, 1.7566, 0.0124]          # m/s, Sec. IV-A
+cov = [                                  # (m/s)²
+    [0.5434, 0.0, 0.0],
+    [0.0, 0.4197, 0.0],
+    [0.0, 0.0, 0.0064],
+]
+hold_period = 0.1                        # s

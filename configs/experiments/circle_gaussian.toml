@@ -1,0 +1,31 @@
+# Baseline LQR (no u_d) on the circle training reference of configs/datagen/model1.toml,
+# in the same Gaussian wind. Keep [reference] and [wind] in sync with that file.
+# Paths are relative to this file. Frames: world NED (z down), body FRD.
+
+[experiment]
+name = "circle_gaussian"
+seed = 0
+duration = 14.0                          # s, one datagen episode
+vehicle_config = "../quadrotor.toml"
+controller_config = "../baseline.toml"
+
+[initial_state]
+start_on_reference = true
+
+[reference]
+type = "circle"
+center = [0.0, 0.0, -2.0]                # m, NED
+radius = 2.0                             # m
+vertical_amplitude = 0.5                 # m
+period = 7.0                             # s per lap
+yaw_deg = 0.0
+
+[wind]
+type = "gaussian"
+mean = [2.7032, 1.7566, 0.0124]          # m/s, Sec. IV-A
+cov = [                                  # (m/s)²
+    [0.5434, 0.0, 0.0],
+    [0.0, 0.4197, 0.0],
+    [0.0, 0.0, 0.0064],
+]
+hold_period = 0.1                        # s

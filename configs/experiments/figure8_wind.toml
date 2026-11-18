@@ -1,0 +1,25 @@
+# Baseline LQR tracking a non-planar figure-8 in steady wind.
+# Paths are relative to this file. Frames: world NED (z down), body FRD.
+
+[experiment]
+name = "figure8_wind"
+seed = 0
+duration = 20.0                          # s, two periods
+vehicle_config = "../quadrotor.toml"
+controller_config = "../baseline.toml"
+
+[initial_state]
+# Start exactly on x_ref(0) with ω_ref(0), so errors come from tracking and
+# wind, not from a start-up transient.
+start_on_reference = true
+
+[reference]
+type = "figure8"
+center = [0.0, 0.0, -2.0]                # m, NED; 2 m above the origin
+amplitudes = [3.0, 1.5, 1.0]             # [A, B, C], m; peak speed ≈ 1.9 m/s
+period = 10.0                            # s per full 8
+yaw_deg = 0.0                            # constant heading, nose north
+
+[wind]
+type = "constant"
+velocity = [3.0, 0.0, 0.0]               # m/s, NED; blowing toward north
