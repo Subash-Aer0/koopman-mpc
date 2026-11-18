@@ -1,0 +1,30 @@
+{
+ "source": "results/runs/20261118T203131Z_presentation_mc/figure8_10s_gaussian.npz",
+ "thrust_gap_rms_m_s2": 1.0153861107955355,
+ "thrust_gap_range_pct": [
+  -2.885750657302355,
+  30.77499646933479
+ ],
+ "r2_of_thrust_gap": {
+  "koopman_dictionary_mean_wind": 0.758508577649964,
+  "greybox_drag_structure_mean_wind": 0.04615978257095077,
+  "greybox_drag_structure_true_wind": 0.0292960823374514,
+  "quadratic_rotor_model": 0.0
+ },
+ "samples": 10000,
+ "greybox_drag_coeffs": [
+  0.05000607253082015,
+  0.04999183916591608,
+  0.004054692442033941
+ ],
+ "true_drag_coeffs": [
+  0.05,
+  0.05,
+  0.1
+ ],
+ "greybox_residual_rms_validation_m_s2": [
+  0.08392602646611254,
+  0.09471299078036803,
+  0.885864548850149
+ ]
+}

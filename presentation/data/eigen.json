@@ -1,0 +1,58 @@
+{
+ "source": "results/runs/20261118T194120Z_outer_loop_koopman",
+ "dt": 0.1,
+ "n_modes": 61,
+ "spectral_radius": 1.0030887137491433,
+ "n_unstable": 1,
+ "unstable_moduli": [
+  1.0030887137491433
+ ],
+ "unstable_doubling_time_s": [
+  22.475928601490764
+ ],
+ "growth_over_horizon_20": [
+  1.0636209414917397
+ ],
+ "n_on_unit_circle": 4,
+ "slow_moduli_range": [
+  0.9741753863858282,
+  0.9985736885828702
+ ],
+ "hover_nominal": [
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0
+ ],
+ "hover_true_drag": [
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  0.9840100624038448,
+  0.969503844858612,
+  0.9669991559483776
+ ],
+ "norm_A": 33016.739560056674,
+ "max_abs_A": 18204.507584184597,
+ "kappa_median": 496551.572293104,
+ "kappa_max": 2609778690008594.0,
+ "perturbation_norm": 0.0001,
+ "perturbed_spectral_radius": {
+  "Koopman": [
+   1.1545840650185835,
+   1.6714695312432604
+  ],
+  "hover true drag": [
+   1.0012052541398089,
+   1.0109047280520969
+  ]
+ }
+}

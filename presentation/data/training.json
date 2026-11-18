@@ -1,0 +1,182 @@
+{
+ "source_dataset": "results/runs/20261118T192413Z_outer_loop_data",
+ "source_model": "results/runs/20261118T194120Z_outer_loop_koopman",
+ "train_episodes": 36,
+ "train_samples": 5040,
+ "dt": 0.1,
+ "lifted_dim": 61,
+ "state_dim": 12,
+ "features": [
+  "p_x",
+  "p_y",
+  "p_z",
+  "v_x",
+  "v_y",
+  "v_z",
+  "roll",
+  "pitch",
+  "yaw",
+  "w_x",
+  "w_y",
+  "w_z",
+  "1",
+  "sin(roll)",
+  "(cos(roll)-1)",
+  "sin(pitch)",
+  "(cos(pitch)-1)",
+  "sin(yaw)",
+  "(cos(yaw)-1)",
+  "v_x*v_x",
+  "v_x*v_y",
+  "v_x*v_z",
+  "v_x*sin(roll)",
+  "v_x*(cos(roll)-1)",
+  "v_x*sin(pitch)",
+  "v_x*(cos(pitch)-1)",
+  "v_x*sin(yaw)",
+  "v_x*(cos(yaw)-1)",
+  "v_y*v_y",
+  "v_y*v_z",
+  "v_y*sin(roll)",
+  "v_y*(cos(roll)-1)",
+  "v_y*sin(pitch)",
+  "v_y*(cos(pitch)-1)",
+  "v_y*sin(yaw)",
+  "v_y*(cos(yaw)-1)",
+  "v_z*v_z",
+  "v_z*sin(roll)",
+  "v_z*(cos(roll)-1)",
+  "v_z*sin(pitch)",
+  "v_z*(cos(pitch)-1)",
+  "v_z*sin(yaw)",
+  "v_z*(cos(yaw)-1)",
+  "sin(roll)*sin(roll)",
+  "sin(roll)*(cos(roll)-1)",
+  "sin(roll)*sin(pitch)",
+  "sin(roll)*(cos(pitch)-1)",
+  "sin(roll)*sin(yaw)",
+  "sin(roll)*(cos(yaw)-1)",
+  "(cos(roll)-1)*sin(pitch)",
+  "(cos(roll)-1)*(cos(pitch)-1)",
+  "(cos(roll)-1)*sin(yaw)",
+  "(cos(roll)-1)*(cos(yaw)-1)",
+  "sin(pitch)*sin(pitch)",
+  "sin(pitch)*(cos(pitch)-1)",
+  "sin(pitch)*sin(yaw)",
+  "sin(pitch)*(cos(yaw)-1)",
+  "(cos(pitch)-1)*sin(yaw)",
+  "(cos(pitch)-1)*(cos(yaw)-1)",
+  "sin(yaw)*sin(yaw)",
+  "sin(yaw)*(cos(yaw)-1)"
+ ],
+ "pe": {
+  "L = n+1 = 13": {
+   "order": 13,
+   "rows": 52,
+   "columns": 4608,
+   "rank": 52,
+   "persistently_exciting": true,
+   "sigma_min_rel": 0.054656394353018424,
+   "min_samples_single_experiment": 64
+  },
+  "L = N+1 = 62": {
+   "order": 62,
+   "rows": 248,
+   "columns": 2844,
+   "rank": 248,
+   "persistently_exciting": true,
+   "sigma_min_rel": 0.016114637149518107,
+   "min_samples_single_experiment": 309
+  }
+ },
+ "pe_stored": {
+  "inputs_order_n+1=13": {
+   "order": 13,
+   "rows": 52,
+   "columns": 4608,
+   "rank": 52,
+   "persistently_exciting": true,
+   "sigma_min_rel": 0.054656394353018424,
+   "min_samples_single_experiment": 64
+  },
+  "inputs_and_wind_order_n+1=13": {
+   "order": 13,
+   "rows": 91,
+   "columns": 4608,
+   "rank": 91,
+   "persistently_exciting": true,
+   "sigma_min_rel": 0.02603570908227012,
+   "min_samples_single_experiment": 103
+  },
+  "inputs_order_N+1=62": {
+   "order": 62,
+   "rows": 248,
+   "columns": 2844,
+   "rank": 248,
+   "persistently_exciting": true,
+   "sigma_min_rel": 0.016114637149518107,
+   "min_samples_single_experiment": 309
+  }
+ },
+ "regressor": {
+  "rows": 68,
+  "columns": 5004,
+  "rank": 68,
+  "condition_number": 72319357.85015504
+ },
+ "demo_ranks": {
+  "constant": 1,
+  "1 sine / channel": 2,
+  "3 sines / channel": 6,
+  "uniform dither": 52,
+  "our data (36 ep.)": 52
+ },
+ "rmse_20_steps_mean_wind": {
+  "koopman": [
+   0.11921682083100424,
+   0.08297613596745548,
+   0.10144163353870266,
+   0.10817561098000103,
+   0.08515182218162476,
+   0.0851154532700427,
+   0.005942063525504395,
+   0.0061582391185318434,
+   0.013596959557816235
+  ],
+  "hover": [
+   1.0278357956874002,
+   0.715783189746336,
+   1.5199005561310324,
+   1.0259606276201958,
+   0.7069185784100743,
+   1.4660146093608384,
+   0.033106385544132914,
+   0.029351116060384718,
+   0.02142836603848359
+  ]
+ },
+ "rmse_1_step_mean_wind": {
+  "koopman": [
+   0.0010792488268409242,
+   0.0008618457342944798,
+   0.001427037263509508,
+   0.021462408356124035,
+   0.017097630967802088,
+   0.027864660713291335,
+   0.0010502787916596458,
+   0.0010755223139361323,
+   0.0019118603067852873
+  ],
+  "hover": [
+   0.0027848817148866784,
+   0.0020022587070040454,
+   0.004417269017103665,
+   0.0557630467383236,
+   0.04030195695163362,
+   0.08798560799620805,
+   0.015461589255639036,
+   0.013257005154220448,
+   0.013047875820554977
+  ]
+ }
+}
