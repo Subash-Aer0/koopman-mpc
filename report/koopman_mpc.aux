@@ -1,0 +1,76 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Quadrotor Model}{1}{section.2}\protected@file@percent }
+\newlabel{eqn:quad-wind-model}{{4}{1}{Quadrotor Model}{equation.2.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Blade Element Momentum Theory}{1}{subsection.2.1}\protected@file@percent }
+\newlabel{sec:bemt}{{2.1}{1}{Blade Element Momentum Theory}{subsection.2.1}{}}
+\newlabel{eqn:thrust-model}{{5}{1}{Blade Element Momentum Theory}{equation.2.5}{}}
+\newlabel{eqn:generated-thrust}{{6}{1}{Blade Element Momentum Theory}{equation.2.6}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}How is this effect modelled in simulation?}{2}{subsubsection.2.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Koopman based Quadrotor Modelling}{2}{section.3}\protected@file@percent }
+\newlabel{sec:koopman}{{3}{2}{Koopman based Quadrotor Modelling}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Koopman operator with inputs}{2}{subsection.3.1}\protected@file@percent }
+\newlabel{eqn:koopman-generic}{{10}{2}{Koopman operator with inputs}{equation.3.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces The two Koopman models.}}{2}{table.1}\protected@file@percent }
+\newlabel{tab:koopman-models}{{1}{2}{The two Koopman models}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Controller Assumption}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}\textsf  {K-Res}: Koopman Residual Model}{3}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:kres}{{3.3}{3}{\KRes : Koopman Residual Model}{subsection.3.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{What is learned.}{3}{section*.1}\protected@file@percent }
+\newlabel{eqn:kres-true}{{15}{3}{What is learned}{equation.3.15}{}}
+\@writefile{toc}{\contentsline {paragraph}{Model.}{3}{section*.2}\protected@file@percent }
+\newlabel{eqn:kres}{{17}{3}{Model}{equation.3.17}{}}
+\@writefile{toc}{\contentsline {paragraph}{Training data.}{3}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Fit.}{3}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}\textsf  {K-Full}: Koopman Full Model}{4}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:kfull}{{3.4}{4}{\KFull : Koopman Full Model}{subsection.3.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{What is learned.}{4}{section*.5}\protected@file@percent }
+\newlabel{eqn:kfull-true}{{19}{4}{What is learned}{equation.3.19}{}}
+\@writefile{toc}{\contentsline {paragraph}{Coordinates.}{4}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Observables.}{4}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Model.}{5}{section*.8}\protected@file@percent }
+\newlabel{eqn:kfull}{{24}{5}{Model}{equation.3.24}{}}
+\@writefile{toc}{\contentsline {paragraph}{What the approximated model looks like.}{5}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Training data.}{5}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Fit.}{5}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Persistency of excitation: the Hankel matrix test}{5}{subsection.3.5}\protected@file@percent }
+\newlabel{sec:pe}{{3.5}{5}{Persistency of excitation: the Hankel matrix test}{subsection.3.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Hankel test on the training inputs (\texttt  {koopman/excitation.py}). \textsf  {K-Res}{}: $u_d$, data set \texttt  {20261107T182512Z\_datagen\_model1}, recorded in run \texttt  {20261119T152936Z\_edmd\_model1}. \textsf  {K-Full}{}: $\delta u$, data set \texttt  {20261118T192413Z\_outer\_loop\_data}.}}{6}{table.2}\protected@file@percent }
+\newlabel{tab:pe}{{2}{6}{Hankel test on the training inputs (\texttt {koopman/excitation.py}). \KRes {}: $u_d$, data set \texttt {20261107T182512Z\_datagen\_model1}, recorded in run \texttt {20261119T152936Z\_edmd\_model1}. \KFull {}: $\delta u$, data set \texttt {20261118T192413Z\_outer\_loop\_data}}{table.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Reading the results.}{6}{section*.12}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Checks before fitting, for the lifted model with $N$ states. $l = 7$: input and wind channels $[u; v_w]$; $m_i = 140$: samples per episode; $m$: snapshot pairs over all episodes. Hankel matrix of depth $N+1$, built as a mosaic: every window lies inside one episode, so each episode needs $m_i \ge N+1$, and the windows of all episodes are pooled to reach full row rank. One episode alone would need $(l+1)(N+1) - 1 = 447$ and $495$ samples, so only the mosaic is PE. At order $n+1$, where Willems' lemma strictly applies, the input is also PE ($70/70$, $91/91$) and the unlifted $[X; U; W]$ has full rank $n + l$ ($16$, $19$).}}{7}{table.3}\protected@file@percent }
+\newlabel{tab:gamma-rank}{{3}{7}{Checks before fitting, for the lifted model with $N$ states. $l = 7$: input and wind channels $[u; v_w]$; $m_i = 140$: samples per episode; $m$: snapshot pairs over all episodes. Hankel matrix of depth $N+1$, built as a mosaic: every window lies inside one episode, so each episode needs $m_i \ge N+1$, and the windows of all episodes are pooled to reach full row rank. One episode alone would need $(l+1)(N+1) - 1 = 447$ and $495$ samples, so only the mosaic is PE. At order $n+1$, where Willems' lemma strictly applies, the input is also PE ($70/70$, $91/91$) and the unlifted $[X; U; W]$ has full rank $n + l$ ($16$, $19$)}{table.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Where the sample counts come from.}{7}{section*.13}\protected@file@percent }
+\newlabel{eqn:mosaic-count}{{29}{7}{Where the sample counts come from}{equation.3.29}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Model Predictive Control}{7}{section.4}\protected@file@percent }
+\newlabel{sec:mpc}{{4}{7}{Model Predictive Control}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}LTV MPC: the base controller}{8}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:ltv-mpc}{{4.1}{8}{LTV MPC: the base controller}{subsection.4.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Why an LTV MPC.}{8}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Formulation.}{8}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Terminal ingredients.}{8}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Koopman MPC}{8}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:koopman-mpc}{{4.2}{8}{Koopman MPC}{subsection.4.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{\textsf  {K-Full-MPC}{}}{8}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\textsf  {K-Res-MPC}{}}{9}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Terminal ingredients in the lifted space}{9}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:koopman-terminal}{{4.3}{9}{Terminal ingredients in the lifted space}{subsection.4.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{No Riccati terminal cost: $(A, B)$ is not stabilisable.}{9}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{No terminal set: the lifted state is not free.}{9}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Results}{9}{section.5}\protected@file@percent }
+\newlabel{sec:results}{{5}{9}{Results}{section.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Set-up.}{9}{section*.21}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces 3-D position RMSE [m], mean over 5 paired wind seeds (std $\le 0.004$~m everywhere); best per row in bold.}}{10}{table.4}\protected@file@percent }
+\newlabel{tab:six-controllers}{{4}{10}{3-D position RMSE [m], mean over 5 paired wind seeds (std $\le 0.004$~m everywhere); best per row in bold}{table.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Position tracking (Table~\ref {tab:six-controllers}).}{10}{section*.22}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces RMSE of the error norm per state, mean over 10 paired wind seeds. Attitude error is measured against the flatness-based reference attitude, which ignores drag.}}{10}{table.5}\protected@file@percent }
+\newlabel{tab:per-state}{{5}{10}{RMSE of the error norm per state, mean over 10 paired wind seeds. Attitude error is measured against the flatness-based reference attitude, which ignores drag}{table.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Per state and over time (Table~\ref {tab:per-state}, Figure~\ref {fig:pos-error}).}{10}{section*.23}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Position error per axis, mean $\pm $ 1 std over 10 wind seeds. Left: circle 7~s; right: figure-8 10~s.}}{11}{figure.1}\protected@file@percent }
+\newlabel{fig:pos-error}{{1}{11}{Position error per axis, mean $\pm $ 1 std over 10 wind seeds. Left: circle 7~s; right: figure-8 10~s}{figure.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Commands.}{11}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion}{11}{section.6}\protected@file@percent }
+\gdef \@abspage@last{11}

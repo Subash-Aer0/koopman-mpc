@@ -240,6 +240,37 @@ def test_horizon_errors_reject_out_of_range_horizon():
 
 # --- script end to end -------------------------------------------------------
 
+def test_input_excitation_passes_for_random_inputs_with_full_keys():
+    rng = np.random.default_rng(0)
+    u_d = rng.uniform(-1, 1, (4, 140, 4))
+    v_w = rng.normal(size=(4, 140, 3))
+    report = load_script().input_excitation(u_d, v_w, state_dim=9, lifted_dim=55)
+    # Same keys as identify_outer_loop_model.py, so both models report alike.
+    assert set(report) == {"inputs_order_n+1=10", "inputs_and_wind_order_n+1=10",
+                           "inputs_order_N+1=56"}
+    assert report["inputs_order_n+1=10"]["rank"] == 40
+    assert report["inputs_and_wind_order_n+1=10"]["rank"] == 70
+    assert all(r["persistently_exciting"] for r in report.values())
+
+
+def test_input_excitation_flags_constant_input():
+    # A constant perturbation excites one direction only: the test must fail.
+    u_d = np.ones((4, 140, 4))
+    v_w = np.random.default_rng(1).normal(size=(4, 140, 3))
+    report = load_script().input_excitation(u_d, v_w, state_dim=9, lifted_dim=55)
+    assert report["inputs_order_n+1=10"]["rank"] == 1
+    assert report["inputs_order_n+1=10"]["persistently_exciting"] is False
+
+
+def test_input_excitation_skips_orders_longer_than_any_episode():
+    rng = np.random.default_rng(2)
+    report = load_script().input_excitation(rng.uniform(size=(2, 20, 4)),
+                                            rng.normal(size=(2, 20, 3)), 9, 55)
+    skipped = report["inputs_order_N+1=56"]
+    assert skipped["persistently_exciting"] is None and "20 samples" in skipped["skipped"]
+    assert report["inputs_order_n+1=10"]["order"] == 10   # still tested
+
+
 def test_identify_script_runs_with_stand_ins(tmp_path, monkeypatch):
     dataset_dir = load_datagen_script().main(
         [str(write_datagen(tmp_path, duration=2.0)), "--results-dir", str(tmp_path / "data")])
@@ -274,6 +305,9 @@ def test_identify_script_runs_with_real_koopman_modules(tmp_path):
                                   "--results-dir", str(tmp_path / "id")])
     report = json.loads((run_dir / "identification.json").read_text())
     assert report["regressor"]["rank"] == 17
+    pe = report["persistency_of_excitation"]
+    assert pe["inputs_order_n+1=10"]["order"] == 10
+    assert pe["inputs_order_N+1=11"]["rows"] == 44   # degree 1: N = 10
     assert report["validation_horizon_steps"] == 3
     assert set(report["validation_horizon"]) == set(load_script().ERROR_LABELS)
     for mode in ("1step", "3step", "rollout"):

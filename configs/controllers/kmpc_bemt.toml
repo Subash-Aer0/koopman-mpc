@@ -1,0 +1,37 @@
+# K-Res-MPC with BEMT rotors: identical to kmpc.toml (same weights, bounds, horizon)
+# except model_run, which points at K-Res identified from BEMT-rotor flights
+# (datagen 20261119T153950Z, same recipe and seed as the paper reproduction).
+# kmpc.toml keeps the ideal-rotor model so that reproduction stays reproducible.
+#
+# K-MPC augmentation, Eqs. (15)-(16): u_d = ν_0 added to the LQR command.
+# Paths are relative to this file. Units: e_x = [p (m), v (m/s), roll/pitch/yaw
+# (rad)], p and v in world NED; u_d = [ω_x, ω_y, ω_z (body FRD, rad/s),
+# c (m/s²)]; wind in world NED, m/s.
+
+[kmpc]
+# Identification run with model.npz, standardizer.npz, identification.json.
+model_run = "../../results/runs/20261119T154103Z_edmd_model1"
+# Sample time the model was identified at, s; must equal the experiment's
+# dt_augment, since ν_0 is held over one model step.
+sample_time = 0.1
+horizon = 5                                   # n_p, Sec. IV-C
+
+# The paper uses the LQR's Q and R. The LQR state is [p, q, v], the error
+# state is [p, v, rpy], so the weights are mapped per block (configs/baseline.toml):
+# p -> 100, v -> 10, attitude -> 1 (the LQR's quaternion weight, applied to
+# angles; a quaternion error is about half the angle, so this weights the
+# attitude about 4x more than the LQR does).
+Q_diag = [100.0, 100.0, 100.0, 10.0, 10.0, 10.0, 1.0, 1.0, 1.0]
+R_diag = [1.0, 5.0, 5.0, 0.1]                 # as the LQR
+
+# |u_d| ≤ u_bound: the training perturbation bounds (configs/datagen/model1.toml).
+# The model was never excited beyond them, so larger u_d would extrapolate.
+u_bound = [0.3, 0.3, 0.3, 1.0]
+
+# Bounds on e_x; inf leaves a channel unconstrained.
+h_lb = [-inf, -inf, -inf, -inf, -inf, -inf, -inf, -inf, -inf]
+h_ub = [inf, inf, inf, inf, inf, inf, inf, inf, inf]
+
+# v̄_w used for prediction, Sec. III-C. Sec. IV-A mean (configs/datagen/model1.toml);
+# set it to the experiment's mean wind when comparing against a different field.
+wind_mean = [2.7032, 1.7566, 0.0124]

@@ -1,0 +1,34 @@
+% K-Full-MPC is the whole outer-loop controller (no LQR).
+% Build: see presentation/diagrams/README.md.
+\documentclass[tikz, border=4pt]{standalone}
+\input{common}
+\begin{document}
+\begin{tikzpicture}[node distance=9mm]
+  \node (ref) {};
+  \node[mpc, right=22mm of ref, minimum height=17mm] (kfull)
+    {\textbf{K-Full-MPC}\sub{10 Hz, $N = 20$}\\[1pt]
+     {\footnotesize\color{subtxt}$z_0 = \psi_f(s)$, convex QP}};
+  \node[block, right=22mm of kfull] (rate) {Rate loop\sub{1 kHz}};
+  \node[block, right=14mm of rate]  (mix)  {Mixer\sub{$T = k_T\,\Omega^2$}};
+  \node[hl,    right=15mm of mix]   (bemt) {BEMT rotors\sub{in local airflow}};
+  \node[block, right=16mm of bemt]  (body) {Rigid body\sub{+ drag}};
+  \node[plant, fit=(bemt)(body)]    (plantbox) {};
+  \node[below=1pt of plantbox.south, font=\small\bfseries] {Quadrotor};
+  \node[windb, above=8mm of plantbox] (wind) {Wind $v_w$};
+  \coordinate[right=10mm of plantbox.east] (out);
+
+  \draw[sig] (ref) -- node[lab] {$p_\text{ref},\,v_\text{ref}$} (kfull);
+  \draw[sig] (kfull) -- node[lab] {$u = (\omega, c)$} (rate);
+  \draw[sig] (rate) -- node[lab] {$f_T,\,\tau_T$} (mix);
+  \draw[sig] (mix)  -- node[lab] {$\Omega_i$} (bemt);
+  \draw[sig] (bemt) -- node[lab] {$f_T^{\text{applied}}$} (body);
+  \draw[sig] (body) -- node[lab, pos=0.7] {$s$} (out);
+  \draw[sig, draw=winddraw] (wind) -- (plantbox);
+
+  % State feedback
+  \coordinate (fbx) at ($(out) + (-4mm, 0)$);
+  \node[dot] at (fbx) {};
+  \draw[fb] (fbx) -- ++(0, -24mm) -| (kfull.south)
+    node[pos=0.25, below, font=\small, text=subtxt] {measured state $s = (p, v, \eta, \omega)$};
+\end{tikzpicture}
+\end{document}

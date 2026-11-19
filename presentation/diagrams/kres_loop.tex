@@ -1,0 +1,47 @@
+% Paper's architecture (slide "K-Res design"): K-Res-MPC adds a bounded
+% correction u_d to an inner LQR. Build: see presentation/diagrams/README.md.
+\documentclass[tikz, border=4pt]{standalone}
+\input{common}
+\begin{document}
+\begin{tikzpicture}[node distance=9mm]
+  % Forward path
+  \node (ref) {};
+  \node[sum, right=10mm of ref] (err) {};
+  \node[block, right=12mm of err]   (lqr)  {LQR\sub{100 Hz}};
+  \node[sum,   right=11mm of lqr]   (add)  {};
+  \node[block, right=14mm of add]   (rate) {Rate loop\sub{1 kHz}};
+  \node[block, right=14mm of rate]  (mix)  {Mixer\sub{$T = k_T\,\Omega^2$}};
+  \node[hl,    right=15mm of mix]   (bemt) {BEMT rotors\sub{in local airflow}};
+  \node[block, right=16mm of bemt]  (body) {Rigid body\sub{+ drag}};
+  \node[plant, fit=(bemt)(body)]    (plantbox) {};
+  \node[below=1pt of plantbox.south, font=\small\bfseries] {Quadrotor};
+  \node[windb, above=8mm of plantbox] (wind) {Wind $v_w$};
+  \coordinate[right=10mm of plantbox.east] (out);
+
+  % Correction path, below the summing junction
+  \node[mpc, below=16mm of add] (kres) {\textbf{K-Res-MPC}\sub{10 Hz, $n_p = 5$, $|u_d| \le 0.3$ rad/s}};
+
+  % Signals
+  \draw[sig] (ref) -- node[lab, pos=0.35] {$x_\text{ref}$} node[below left, pos=0.95, font=\small] {$+$} (err);
+  \draw[sig] (err) -- node[lab] {$e$} coordinate[pos=0.4] (esplit) (lqr);
+  \node[dot] at (esplit) {};
+  \draw[sig] (lqr) -- node[lab] {$u_h$} node[below left, pos=0.95, font=\small] {$+$} (add);
+  \draw[sig] (add) -- node[lab] {$u_h + u_d$} (rate);
+  \draw[sig] (rate) -- node[lab] {$f_T,\,\tau_T$} (mix);
+  \draw[sig] (mix)  -- node[lab] {$\Omega_i$} (bemt);
+  \draw[sig] (bemt) -- node[lab] {$f_T^{\text{applied}}$} (body);
+  \draw[sig] (body) -- node[lab, pos=0.7] {$x$} (out);
+  \draw[sig, draw=winddraw] (wind) -- (plantbox);
+
+  % Error to the MPC and its correction back into the sum
+  \draw[sig] (esplit) |- (kres.west);
+  \draw[sig] (kres) -- node[right, font=\small] {$u_d$} node[below right, pos=0.93, font=\small] {$+$} (add);
+
+  % State feedback
+  \coordinate (fbx) at ($(out) + (-4mm, 0)$);
+  \node[dot] at (fbx) {};
+  \draw[fb] (fbx) -- ++(0, -40mm)
+    -| node[pos=0.25, below, font=\small, text=subtxt] {measured state $x = (p, v, \eta)$}
+       node[below left, pos=0.97, font=\small] {$-$} (err.south);
+\end{tikzpicture}
+\end{document}

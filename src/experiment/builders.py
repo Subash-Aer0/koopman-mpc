@@ -183,17 +183,21 @@ def _seed(section: dict, where: str) -> int:
     return seed
 
 
-def load_experiment(path: str | Path, seed: int | None = None) -> Experiment:
+def load_experiment(path: str | Path, seed: int | None = None,
+                    vehicle_config: str | Path | None = None) -> Experiment:
     """Load an experiment TOML and the vehicle/controller configs it points to.
 
     vehicle_config and controller_config are resolved relative to the
     experiment file. The single rng is seeded from [experiment] seed, or from
     `seed` when given (Monte Carlo runs: one experiment, many wind draws).
+    `vehicle_config` replaces the experiment's vehicle (e.g. the same flight on
+    configs/quadrotor_motor.toml); the wind draws do not depend on it.
     """
     path = Path(path).resolve()
     cfg = load_toml(path)
     section = _section(cfg, "experiment")
-    vehicle_path = (path.parent / _value(section, "vehicle_config", "experiment")).resolve()
+    vehicle_path = (Path(vehicle_config).resolve() if vehicle_config is not None else
+                    (path.parent / _value(section, "vehicle_config", "experiment")).resolve())
     controller_path = (path.parent / _value(section, "controller_config", "experiment")).resolve()
     if seed is None:
         seed = _seed(section, "experiment")

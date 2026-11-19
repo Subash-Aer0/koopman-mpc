@@ -101,6 +101,9 @@ class SimulationLog:
         u_cmd: Command sent to the low-level loop, sat(u_h + u_d), shape (N, 4).
         v_w: Wind velocity, NED world, m/s, shape (N, 3).
         timing: Loop periods used.
+        omega_rotor: Rotor speeds Ω_R behind the wrench applied from that instant,
+            rad/s, shape (N, 4) (RotorActuator.rotor_speeds; what a vehicle measures).
+            NaN without a rotor model; None in logs saved before it existed.
     """
 
     t: np.ndarray
@@ -112,6 +115,7 @@ class SimulationLog:
     u_cmd: np.ndarray
     v_w: np.ndarray
     timing: Timing
+    omega_rotor: np.ndarray | None = None
 
 
 def lqr_state(x) -> np.ndarray:
@@ -182,7 +186,10 @@ def simulate(
         "u_d": np.empty((n_log, lqr_model.INPUT_DIM)),
         "u_cmd": np.empty((n_log, lqr_model.INPUT_DIM)),
         "v_w": np.empty((n_log, 3)),
+        "omega_rotor": np.full((n_log, 4), np.nan),
     }
+    if actuator is not None:
+        actuator.reset(timing.dt_sim)
 
     _, u_cmd = _reference(reference, 0.0)
     u_d = np.zeros(lqr_model.INPUT_DIM)
@@ -218,6 +225,8 @@ def simulate(
         f_t, tau_t = rate_controller(x, u_cmd)
         if actuator is not None:
             f_t, tau_t = actuator(x, f_t, tau_t, v_w)
+            if is_log:
+                log["omega_rotor"][i] = actuator.rotor_speeds
         x = rigid_body.rk4_step(x, f_t, tau_t, v_w, params, timing.dt_sim)
 
     return SimulationLog(**log, timing=timing)

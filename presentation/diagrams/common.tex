@@ -1,0 +1,35 @@
+% Shared style for the slide block diagrams. Colours match report/koopman_mpc.tex.
+\usepackage{amsmath,amssymb}
+% Lato matches the slides; plain TeX Live may not ship it, so fall back to the default sans.
+\IfFileExists{lato.sty}{\usepackage[default]{lato}}{\renewcommand{\familydefault}{\sfdefault}}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, calc}
+
+\definecolor{boxfill}{HTML}{EAF2FB}
+\definecolor{boxdraw}{HTML}{3B6EA8}
+\definecolor{hlfill}{HTML}{FDE6D8}
+\definecolor{hldraw}{HTML}{D9622B}
+\definecolor{subtxt}{HTML}{555555}
+\definecolor{plantdraw}{HTML}{6B6B6B}
+\definecolor{windfill}{HTML}{E6F4EA}
+\definecolor{winddraw}{HTML}{3C8D5A}
+\definecolor{mpcfill}{HTML}{F6E6F0}
+\definecolor{mpcdraw}{HTML}{A8507F}
+
+\tikzset{
+  block/.style = {draw=boxdraw, fill=boxfill, rounded corners=3pt,
+    line width=0.7pt, align=center, minimum height=13mm, inner xsep=6pt},
+  hl/.style    = {block, draw=hldraw, fill=hlfill},
+  mpc/.style   = {block, draw=mpcdraw, fill=mpcfill, line width=1.1pt},
+  windb/.style = {block, draw=winddraw, fill=windfill, minimum height=10mm},
+  plant/.style = {draw=plantdraw, dashed, rounded corners=5pt,
+    line width=0.8pt, inner xsep=4mm, inner ysep=4mm},
+  sum/.style   = {draw=boxdraw, fill=white, circle, line width=0.7pt,
+    minimum size=6mm, inner sep=0pt},
+  sig/.style   = {-{Stealth[length=2.4mm]}, line width=0.7pt},
+  fb/.style    = {sig, draw=subtxt},
+  dot/.style   = {circle, fill=black, inner sep=1.3pt},
+  lab/.style   = {above, font=\small, inner sep=3pt},
+}
+% Second line of a block in grey, smaller.
+\newcommand{\sub}[1]{\\[-1pt]{\footnotesize\color{subtxt}#1}}

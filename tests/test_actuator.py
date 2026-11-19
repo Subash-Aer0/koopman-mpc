@@ -137,3 +137,81 @@ def test_experiment_carries_the_vehicle_actuator(tmp_path):
     exp = load_experiment(tmp_path / "exp.toml")
     assert exp.actuator.model == "bemt"
     assert (configs / "rotor.toml").resolve() in exp.config_paths
+
+
+# ---------------------------------------------------------------- motor model
+from dynamics.motor import MotorParams  # noqa: E402
+from dynamics.rotor import mixer  # noqa: E402
+
+MOTOR = MotorParams(time_constant=0.03, rotor_inertia=3e-5)
+DT = 1e-3
+
+
+def motor_actuator() -> RotorActuator:
+    act = RotorActuator("bemt", load_rotor_params(REPO_ROOT / "configs" / "rotor.toml"),
+                        motor=MOTOR)
+    act.reset(DT)
+    return act
+
+
+def run(act, x, v_w, steps):
+    for _ in range(steps):
+        f, tau = act(x, HOVER_FORCE, np.zeros(3), v_w)
+    return f, tau
+
+
+def test_motor_in_still_air_hover_holds_the_commanded_speed():
+    act = motor_actuator()
+    f, _ = run(act, state(), np.zeros(3), 200)
+    omega_cmd = mixer(9.81, np.zeros(3), act.rotor)
+    np.testing.assert_allclose(act.rotor_speeds, omega_cmd, rtol=1e-12)
+    np.testing.assert_allclose(f, HOVER_FORCE, rtol=1e-9)
+
+
+def test_edgewise_wind_slows_the_rotors_but_adds_thrust():
+    """The sign problem of Model 2 under this BEMT: edgewise flow raises the torque, so the
+    measured speed drops and f_res = f_c − Σ k_T Ω_R² says "less thrust", while BEMT
+    actually delivers more thrust than commanded."""
+    act = motor_actuator()
+    f, _ = run(act, state(), np.array([5.0, 0.0, 0.0]), 300)       # 10 τ_m: settled
+    omega_cmd = mixer(9.81, np.zeros(3), act.rotor)
+    assert np.all(act.rotor_speeds < omega_cmd)
+    f_res = 9.81 - act.rotor.thrust_coefficient * np.sum(act.rotor_speeds**2)   # m = 1 kg
+    assert f_res > 0                       # residual says: thrust missing
+    assert -f[2] > 9.81                    # truth: more thrust than commanded
+
+
+def test_motor_needs_reset_and_reset_restarts_the_state():
+    act = RotorActuator("bemt", load_rotor_params(REPO_ROOT / "configs" / "rotor.toml"),
+                        motor=MOTOR)
+    with pytest.raises(RuntimeError):
+        act(state(), HOVER_FORCE, np.zeros(3), np.zeros(3))
+    act.reset(DT)
+    run(act, state(), np.array([5.0, 0.0, 0.0]), 100)
+    act.reset(DT)
+    assert np.all(np.isnan(act.rotor_speeds))
+    act(state(), HOVER_FORCE, np.zeros(3), np.zeros(3))
+    np.testing.assert_allclose(act.rotor_speeds, mixer(9.81, np.zeros(3), act.rotor))
+
+
+def test_rotor_speeds_without_motor_are_the_command_and_nan_for_ideal(bemt):
+    bemt(state(), HOVER_FORCE, TORQUE, np.array([2.0, 1.0, 0.0]))
+    np.testing.assert_allclose(bemt.rotor_speeds, mixer(9.81, TORQUE, bemt.rotor))
+    ideal = RotorActuator("ideal")
+    ideal(state(), HOVER_FORCE, TORQUE, np.zeros(3))
+    assert np.all(np.isnan(ideal.rotor_speeds))
+    with pytest.raises(ValueError):
+        RotorActuator("ideal", motor=MOTOR)
+
+
+def test_motor_vehicle_config_is_the_default_vehicle_plus_a_motor():
+    import tomllib
+    configs = REPO_ROOT / "configs"
+    default = tomllib.loads((configs / "quadrotor.toml").read_text())
+    with_motor = tomllib.loads((configs / "quadrotor_motor.toml").read_text())
+    motor = with_motor.pop("motor")
+    assert with_motor == default
+    act = load_actuator(tomllib.loads((configs / "quadrotor_motor.toml").read_text()),
+                        configs / "quadrotor_motor.toml")
+    assert act.motor == MotorParams(motor["time_constant"], motor["rotor_inertia"])
+    assert load_actuator(default, configs / "quadrotor.toml").motor is None

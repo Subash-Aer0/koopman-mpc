@@ -7,13 +7,16 @@ Writes results/runs/<time>_<name>/ with metadata, the config copy and:
     model.npz            KoopmanModel.save: A, B, D, C
     standardizer.npz     mean, std of e_x; the model acts on z = (e_x − mean) / std
     identification.json  dataset provenance, N, Γ1 rank / condition number,
+                         Hankel persistency-of-excitation tests of u_d (and u_d + v_w),
                          validation H-step and full-rollout errors per channel
     validation_prediction.npz  true e_x, full-rollout and 1- / H-step predictions
     figures/prediction_<reference>_<repeat>_<mode>.png  Fig. 2-style true vs
                          predicted e_x; mode is 1step, <H>step or rollout
 
 Pipeline (Sec. III-B, IV-B): standardize e_x with training statistics, lift
-with ψ, stack snapshot pairs inside each episode, check Γ1 has full row rank,
+with ψ, stack snapshot pairs inside each episode, test the inputs for
+persistency of excitation (block-Hankel rank, koopman/excitation.py), check Γ1
+has full row rank,
 solve Eq. (8), then validate two ways on each validation episode, driven by
 the logged u_d and v_w: H-step predictions re-lifted from the logged state at
 every sample (how the MPC uses the model, Sec. IV-C), and a full rollout from
@@ -34,6 +37,7 @@ from datagen.dataset import load_dataset
 from experiment.builders import load_identify
 from experiment.run_record import start_run
 from koopman.edmd import build_snapshots, fit_edmd
+from koopman.excitation import persistency_of_excitation
 from koopman.lifting import MonomialLifting
 from koopman.models import KoopmanModel
 from koopman.preprocessing import Standardizer, regressor_diagnostics
@@ -53,6 +57,39 @@ def episode_data(split: Split, standardizer: Standardizer):
         list(split.u_d),
         list(split.v_w),
     )
+
+
+def input_excitation(u_d, v_w, state_dim: int, lifted_dim: int) -> dict:
+    """Hankel PE tests of the training inputs, keyed as in identify_outer_loop_model.py.
+
+    Orders: n + 1 (Willems' lemma on the error state) for u_d and for [u_d, v_w],
+    and N + 1 (the lifted dimension) for u_d. Episodes are combined in a mosaic
+    Hankel matrix (koopman.excitation). An order no episode is long enough for
+    cannot be tested: it is recorded with persistently_exciting = None and a
+    reason, not raised, so short smoke-test datasets still identify.
+
+    Args:
+        u_d: Per-episode perturbations, (E, T, m) or list of (T_i, m).
+        v_w: Per-episode wind, same leading shape, (…, d), m/s.
+        state_dim: n.
+        lifted_dim: N.
+    """
+    inputs = [np.asarray(u, dtype=float) for u in u_d]
+    with_wind = [np.hstack([u, np.asarray(w, dtype=float)]) for u, w in zip(inputs, v_w)]
+    longest = max(len(u) for u in inputs)
+    tests = {
+        f"inputs_order_n+1={state_dim + 1}": (inputs, state_dim + 1),
+        f"inputs_and_wind_order_n+1={state_dim + 1}": (with_wind, state_dim + 1),
+        f"inputs_order_N+1={lifted_dim + 1}": (inputs, lifted_dim + 1),
+    }
+    results = {}
+    for key, (episodes, order) in tests.items():
+        if order > longest:
+            results[key] = {"order": order, "persistently_exciting": None,
+                            "skipped": f"longest episode has {longest} samples < order {order}"}
+        else:
+            results[key] = persistency_of_excitation(episodes, order)
+    return results
 
 
 def projection(lifting, state_dim: int) -> np.ndarray:
@@ -216,6 +253,16 @@ def main(argv: list[str] | None = None) -> Path:
     C = projection(lifting, ERROR_DIM)
     input_dim, dist_dim = train.u_d.shape[-1], train.v_w.shape[-1]
 
+    excitation = input_excitation(train.u_d, train.v_w, ERROR_DIM, lifting.lifted_dim)
+    for key, value in excitation.items():
+        if value["persistently_exciting"] is None:
+            logger.warning("PE %-30s not tested: %s", key, value["skipped"])
+        else:
+            logger.info("PE %-30s rank %d/%d  σmin/σmax %.3g  -> %s", key, value["rank"],
+                        value["rows"], value["sigma_min_rel"],
+                        "persistently exciting" if value["persistently_exciting"]
+                        else "NOT PE")
+
     gamma1, gamma2 = build_snapshots(*episode_data(train, standardizer), lifting)
     diagnostics = regressor_diagnostics(
         gamma1, lifting.lifted_dim + input_dim + dist_dim
@@ -303,6 +350,7 @@ def main(argv: list[str] | None = None) -> Path:
                 "lifted_dim": lifting.lifted_dim,
                 "degree": cfg.degree,
                 "l1_lambda": cfg.l1_lambda,
+                "persistency_of_excitation": excitation,
                 "regressor": diagnostics,
                 "spectral_radius_A": spectral_radius,
                 "validation_one_step": stepped_errors[1],

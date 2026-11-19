@@ -7,8 +7,10 @@
   produces at speed Ω in its local airflow. Implemented here in the classical
   uniform-inflow form (Leishman, Principles of Helicopter Aerodynamics, 2nd ed.,
   Ch. 2-3 and 5), NOT the hybrid BEMT of Davoudi et al. [1] used in the CCTA
-  paper (non-uniform inflow, rotor-speed adjustment). Rotor speed is taken equal
-  to the command (ideal motor), so Ω_R = Ω_cmd.
+  paper (non-uniform inflow, rotor-speed adjustment). Rotor speed is an input:
+  the command for an ideal motor (Ω_R = Ω_cmd), or the state of the optional
+  motor model (dynamics/motor.py, wired in dynamics/actuator.py), which slows
+  under aerodynamic torque like the paper's rotor-speed adjustment.
 
 BEMT, per rotor (non-dimensional by the tip speed ΩR):
     μ   = V_edge / (ΩR)       advance ratio, airflow in the rotor disk plane
@@ -251,7 +253,8 @@ def bemt_thrust(rotor_speeds_cmd, relative_airspeed_body, params: RotorParams):
         params: Rotor parameters.
 
     Returns:
-        T (4,) N, Q (4,) N·m, Ω_R (4,) rad/s (= Ω_cmd: ideal motor, no RPM adjustment).
+        T (4,) N, Q (4,) N·m, and the speeds they were evaluated at (4,) rad/s. Pass the
+        command for an ideal motor, or the motor state Ω (dynamics/motor.py).
         A stopped rotor (Ω = 0, e.g. clipped by the mixer) gives T = Q = 0.
     """
     omega = np.asarray(rotor_speeds_cmd, dtype=float)

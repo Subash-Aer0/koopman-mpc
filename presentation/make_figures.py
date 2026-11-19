@@ -38,11 +38,13 @@ FIG, DATA = HERE / "figures", HERE / "data"
 
 # Okabe-Ito palette (colour-blind safe); one colour per controller across all slides.
 COLORS = {"LTV nominal": "#7f7f7f", "Koopman": "#0072B2", "LTV grey-box": "#E69F00",
-          "LTV true drag": "#009E73", "LQR": "#D55E00", "LQR + K-MPC": "#0072B2"}
+          "LTV true drag": "#009E73", "LQR": "#D55E00", "LQR + K-MPC": "#0072B2",
+          "K-Res-MPC": "#CC79A7"}
 DISPLAY = {"LTV nominal": "LTV nominal (no wind model)", "Koopman": "Koopman MPC",
            "LTV grey-box": "LTV grey-box drag", "LTV true drag": "LTV oracle (true drag)",
-           "LQR": "LQR", "LQR + K-MPC": "LQR + K-MPC"}
+           "LQR": "LQR", "LQR + K-MPC": "LQR + K-MPC", "K-Res-MPC": "LQR + K-Res-MPC"}
 FULL_MPC = ("LTV nominal", "Koopman", "LTV grey-box", "LTV true drag")
+PAPER = ("LQR", "K-Res-MPC")    # the paper's architecture, from run_paper_controllers.py
 AXES = {"pos": (("north", "east", "down"), "m", "position error"),
         "vel": (("north", "east", "down"), "m/s", "velocity error"),
         "eul": (("roll", "pitch", "yaw"), "deg", "attitude error")}
@@ -87,7 +89,9 @@ def neu(p: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 def save(fig: plt.Figure, name: str) -> None:
+    """SVG for the slides (Typst), PDF for the report (pdflatex cannot include SVG)."""
     fig.savefig(FIG / f"{name}.svg")
+    fig.savefig(FIG / f"{name}.pdf")
     plt.close(fig)
 
 
@@ -134,7 +138,7 @@ def plot_inputs(t: np.ndarray, u: dict[str, np.ndarray], u_lb, u_ub, title: str)
     """Commands of one seed, rows = channel, columns = controller, bounds dashed."""
     labels = list(u)
     fig, axes = plt.subplots(4, len(labels), sharex=True, sharey="row",
-                             figsize=(2.6 * len(labels), 7.0))
+                             figsize=(2.6 * len(labels), 5.6))
     for j, label in enumerate(labels):
         for i in range(4):
             ax = axes[i, j]
@@ -196,35 +200,58 @@ def input_metrics(u: np.ndarray, u_lb, u_ub) -> dict:
             "flips": flips.mean(axis=(0, 1)).tolist()}
 
 
-def full_mpc_figures(mc_run: Path) -> dict:
-    out = {"source": str(mc_run)}
+def _merge_paper(d, keep: list[int], paper_run: Path | None, name: str):
+    """(controllers, x, x_ref, u) of the full MPCs, with the paper's controllers prepended
+    when paper_run is given. Raises unless both runs flew the same seeds, reference and wind."""
+    x, x_ref, u = d["x"][:, keep], d["x_ref"][:, keep], d["u_cmd"][:, keep]
+    if paper_run is None:
+        return FULL_MPC, x, x_ref, u
+    p = np.load(paper_run / f"{name}.npz")
+    labels = [str(s) for s in p["labels"]]
+    idx = [labels.index(lb) for lb in PAPER]
+    if not (np.array_equal(p["seeds"], d["seeds"]) and np.allclose(p["t"], d["t"])):
+        raise ValueError(f"{name}: paper and full-MPC runs have different seeds or times")
+    if not np.allclose(p["v_w"][:, idx], d["v_w"][:, keep[:1]].repeat(len(idx), axis=1)):
+        raise ValueError(f"{name}: paper and full-MPC runs did not fly the same wind")
+    if not np.allclose(p["x_ref"][:, idx, :, 0:3], x_ref[:, :1, :, 0:3]):
+        raise ValueError(f"{name}: paper and full-MPC runs have different references")
+    return (PAPER + FULL_MPC,
+            np.concatenate([p["x"][:, idx], x], axis=1),
+            np.concatenate([p["x_ref"][:, idx], x_ref], axis=1),
+            np.concatenate([p["u_cmd"][:, idx], u], axis=1))
+
+
+def full_mpc_figures(mc_run: Path, paper_run: Path | None = None) -> dict:
+    out = {"source": str(mc_run), "paper_source": str(paper_run) if paper_run else None}
     for path in sorted(mc_run.glob("*.npz")):
         name = path.stem
         d = np.load(path)
         labels = [str(s) for s in d["labels"]]
         keep = [labels.index(lb) for lb in FULL_MPC]
-        t, x, x_ref, u = d["t"], d["x"][:, keep], d["x_ref"][:, keep], d["u_cmd"][:, keep]
+        controllers, x, x_ref, u = _merge_paper(d, keep, paper_run, name)
+        t = d["t"]
         errors = state_errors(x, x_ref)            # (S, C, T, 3) each
         title = (name.replace("_gaussian", "").replace("figure8_", "figure-8 ")
                  .replace("circle_", "circle ").replace("s", " s"))
-        save(plot_3d(x_ref[0, 0, :, 0:3], {lb: x[0, c, :, 0:3] for c, lb in enumerate(FULL_MPC)},
-                     f"Full MPC, {title} (seed 0)"), f"mc_{name}_3d")
+        save(plot_3d(x_ref[0, -1, :, 0:3], {lb: x[0, c, :, 0:3] for c, lb in enumerate(controllers)},
+                     f"{title} (seed 0)"), f"mc_{name}_3d")
         for kind in AXES:
-            save(plot_error_bands(t, {lb: errors[kind][:, c] for c, lb in enumerate(FULL_MPC)},
-                                  kind, f"Full MPC, {title}"), f"mc_{name}_err_{kind}")
-        save(plot_inputs(t, {lb: u[0, c] for c, lb in enumerate(FULL_MPC)}, d["u_lb"], d["u_ub"],
-                         f"Full MPC, {title}"), f"mc_{name}_inputs")
+            save(plot_error_bands(t, {lb: errors[kind][:, c] for c, lb in enumerate(controllers)},
+                                  kind, title), f"mc_{name}_err_{kind}")
+        save(plot_inputs(t, {lb: u[0, c] for c, lb in enumerate(controllers)}, d["u_lb"], d["u_ub"],
+                         title), f"mc_{name}_inputs")
         out[name] = {"title": title, "seeds": int(x.shape[0]), "controllers": {
             lb: {**{f"rmse_{kind}": {"mean": float(rmse_3d(errors[kind][:, c]).mean()),
                                      "std": float(rmse_3d(errors[kind][:, c]).std())}
                     for kind in AXES},
                  "inputs": input_metrics(u[:, c], d["u_lb"], d["u_ub"])}
-            for c, lb in enumerate(FULL_MPC)}}
+            for c, lb in enumerate(controllers)}}
     return out
 
 
-def gap_table(gap_run: Path) -> dict:
-    """Position RMSE of the four controllers on every reference of a gap_closure run."""
+def gap_table(gap_run: Path, paper_run: Path | None = None) -> dict:
+    """Position RMSE on every reference of a gap_closure run: its four full-MPC
+    controllers, plus LQR and LQR + K-Res-MPC from paper_run on the same seeds."""
     summary = json.loads((gap_run / "summary.json").read_text())
     rows = {}
     for name, v in summary.items():
@@ -233,7 +260,20 @@ def gap_table(gap_run: Path) -> dict:
         rows[name] = {lb: {"mean": v["rmse_3d_m"][lb]["mean"], "std": v["rmse_3d_m"][lb]["std"],
                            "reduction_pct": v["reduction_from_nominal_pct"][lb]}
                       for lb in FULL_MPC}
-    return {"source": str(gap_run), "seeds": len(summary["seeds"]), "rows": rows,
+        if paper_run is not None:
+            p = np.load(paper_run / f"{name}.npz")
+            seeds = list(p["seeds"])
+            sel = [seeds.index(s) for s in summary["seeds"]]   # same wind as gap_closure
+            labels = [str(s) for s in p["labels"]]
+            nominal = v["rmse_3d_m"]["LTV nominal"]["mean"]
+            for lb in PAPER:
+                c = labels.index(lb)
+                err = p["x"][sel, c, :, 0:3] - p["x_ref"][sel, c, :, 0:3]
+                r = rmse_3d(err)
+                rows[name][lb] = {"mean": float(r.mean()), "std": float(r.std()),
+                                  "reduction_pct": float(100 * (nominal - r.mean()) / nominal)}
+    return {"source": str(gap_run), "paper_source": str(paper_run) if paper_run else None,
+            "seeds": len(summary["seeds"]), "rows": rows,
             "greybox_drag_coeffs": summary["greybox_drag_coeffs"]}
 
 
@@ -518,14 +558,16 @@ def eigen_figures(model_run: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    for name in ("paper", "mc", "gap", "model", "greybox", "dataset", "bemt"):
-        parser.add_argument(f"--{name}-run", type=Path, required=name != "bemt")
+    for name in ("paper", "mc", "gap", "model", "greybox", "dataset", "bemt", "paper-bemt"):
+        parser.add_argument(f"--{name}-run", type=Path, required=name not in ("bemt", "paper-bemt"),
+                            help="paper-bemt: run_paper_controllers.py run (adds LQR, K-Res-MPC)"
+                            if name == "paper-bemt" else None)
     args = parser.parse_args()
     FIG.mkdir(exist_ok=True)
     DATA.mkdir(exist_ok=True)
     out = {"paper": paper_figures(args.paper_run),
-           "full_mpc": full_mpc_figures(args.mc_run),
-           "gap": gap_table(args.gap_run),
+           "full_mpc": full_mpc_figures(args.mc_run, args.paper_bemt_run),
+           "gap": gap_table(args.gap_run, args.paper_bemt_run),
            "training": training_figures(args.dataset_run, args.model_run, args.mc_run),
            "thrust": thrust_figures(args.mc_run, args.model_run, args.greybox_run),
            "eigen": eigen_figures(args.model_run)}

@@ -67,14 +67,18 @@ def simulate_outer_loop(x0, duration: float, reference: Reference, wind: Wind,
         "u_d": np.zeros((n_log, lqr_model.INPUT_DIM)),
         "u_cmd": np.empty((n_log, lqr_model.INPUT_DIM)),
         "v_w": np.empty((n_log, 3)),
+        "omega_rotor": np.full((n_log, 4), np.nan),
     }
+    if actuator is not None:
+        actuator.reset(dt_sim)
     u_cmd = None
     for k in range(n_steps):
         t = k * dt_sim
         if k % every["control"] == 0:
             u_cmd = as_finite_vector("u_cmd", controller(t, x.copy()), lqr_model.INPUT_DIM)
         v_w = as_finite_vector("v_w", wind.sample(t, x[rigid_body.POS].copy()), 3)
-        if k % every["log"] == 0:
+        is_log = k % every["log"] == 0
+        if is_log:
             i = k // every["log"]
             x_ref, u_ref = reference(t)
             log["t"][i] = t
@@ -87,5 +91,7 @@ def simulate_outer_loop(x0, duration: float, reference: Reference, wind: Wind,
         f_t, tau_t = rate_controller(x, u_cmd)
         if actuator is not None:
             f_t, tau_t = actuator(x, f_t, tau_t, v_w)
+            if is_log:
+                log["omega_rotor"][i] = actuator.rotor_speeds
         x = rigid_body.rk4_step(x, f_t, tau_t, v_w, params, dt_sim)
     return SimulationLog(**log, timing=timing)

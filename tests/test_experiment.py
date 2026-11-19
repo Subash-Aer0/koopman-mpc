@@ -139,6 +139,28 @@ def test_start_run_writes_metadata_and_verbatim_configs(tmp_path):
         assert (run_dir / "config" / path.name).read_bytes() == path.read_bytes()
 
 
+def test_start_run_records_non_utf8_diff_verbatim(tmp_path):
+    # Regression: a modified tracked file with non-UTF-8 bytes that git diffs as
+    # text (as a PDF can be) made start_run raise UnicodeDecodeError.
+    import subprocess
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git = lambda *a: subprocess.run(["git", "-C", str(repo), *a], check=True,
+                                    capture_output=True)
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "test")
+    blob = repo / "figure.pdf"
+    blob.write_bytes(b"%PDF-1.7\n\x80\x81 first\n")
+    git("add", "figure.pdf")
+    git("commit", "-qm", "init")
+    blob.write_bytes(b"%PDF-1.7\n\x80\x82 second\n")
+
+    run_dir = start_run(tmp_path / "runs", "binary_diff", 0, [], repo)
+    patch = (run_dir / "git_diff.patch").read_bytes()
+    assert b"\x80\x82 second" in patch and b"\x80\x81 first" in patch
+
+
 def test_start_run_refuses_to_overwrite(tmp_path):
     exp = load_experiment(write_experiment(tmp_path))
     args = (tmp_path / "runs", exp.name, exp.seed, exp.config_paths, REPO_ROOT)

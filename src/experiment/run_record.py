@@ -31,8 +31,19 @@ def _git(repo_root: Path, *args: str) -> str:
     return result.stdout
 
 
+def _git_bytes(repo_root: Path, *args: str) -> bytes:
+    """Raw stdout, for output that need not be UTF-8: git diffs a tracked file it
+    judges to be text (e.g. a PDF without early NUL bytes) as raw bytes."""
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), *args], capture_output=True, check=True
+    )
+    return result.stdout
+
+
 def git_state(repo_root: str | Path) -> dict:
     """Commit hash, dirty flag, untracked files and diff of the working tree.
+
+    The diff is bytes (`git diff HEAD` verbatim), since tracked files need not be UTF-8.
 
     Raises:
         RuntimeError: If repo_root is not inside a git repository; a run
@@ -44,7 +55,7 @@ def git_state(repo_root: str | Path) -> dict:
         raise RuntimeError(f"cannot read git commit in {repo_root}") from err
     status = _git(Path(repo_root), "status", "--porcelain").splitlines()
     untracked = [line[3:] for line in status if line.startswith("??")]
-    diff = _git(Path(repo_root), "diff", "HEAD")
+    diff = _git_bytes(Path(repo_root), "diff", "HEAD")
     return {
         "commit": commit,
         "dirty": bool(status),
@@ -77,7 +88,7 @@ def start_run(results_root: str | Path, name: str, seed: int,
 
     git = git_state(repo_root)
     if git["diff"]:
-        (run_dir / "git_diff.patch").write_text(git["diff"])
+        (run_dir / "git_diff.patch").write_bytes(git["diff"])
 
     metadata = {
         "name": name,
@@ -100,7 +111,8 @@ def start_run(results_root: str | Path, name: str, seed: int,
 
 def save_log(run_dir: str | Path, log: SimulationLog) -> Path:
     """Write the log arrays and timing to run_dir/log.npz."""
-    arrays = {f.name: getattr(log, f.name) for f in fields(log) if f.name != "timing"}
+    arrays = {f.name: getattr(log, f.name) for f in fields(log)
+              if f.name != "timing" and getattr(log, f.name) is not None}
     timing = {_TIMING_PREFIX + key: value for key, value in asdict(log.timing).items()}
     path = Path(run_dir) / _LOG_FILE
     np.savez(path, **arrays, **timing)
@@ -113,5 +125,7 @@ def load_log(run_dir: str | Path) -> SimulationLog:
         timing = Timing(**{
             f.name: float(data[_TIMING_PREFIX + f.name]) for f in fields(Timing)
         })
-        arrays = {f.name: data[f.name] for f in fields(SimulationLog) if f.name != "timing"}
+        # Optional fields (e.g. omega_rotor) are absent from logs saved before they existed.
+        arrays = {f.name: data[f.name] for f in fields(SimulationLog)
+                  if f.name != "timing" and f.name in data.files}
     return SimulationLog(**arrays, timing=timing)
